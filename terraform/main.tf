@@ -6,6 +6,12 @@ terraform {
     }
   }
   required_version = ">=1.6"
+
+  backend "s3" {
+    bucket = "vaultdrop-tfstate-ap-south-1"
+    key    = "terraform.tfstate"
+    region = "ap-south-1"
+  }
 }
 
 provider "aws" {
