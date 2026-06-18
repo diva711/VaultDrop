@@ -1,0 +1,25 @@
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+terraform/lambda.zip
+
+# Lambda
+lambda/node_modules/
+lambda/lambda.zip
+
+# Backend
+backend/node_modules/
+backend/.env
+
+# Frontend (has its own .gitignore)
+frontend/node_modules/
+frontend/build/
+
+# OS
+.DS_Store
+Thumbs.dbresponse.json
+terraform/index.js
+terraform/.gitignore

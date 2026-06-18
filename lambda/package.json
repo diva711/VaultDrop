@@ -1,0 +1,10 @@
+{
+  "name": "vaultdrop-cleanup-lambda",
+  "version": "1.0.0",
+  "description": "Deletes expired files from S3 and marks them in DB",
+  "main": "index.js",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.0.0",
+    "pg": "^8.0.0"
+  }
+}
