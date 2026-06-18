@@ -15,8 +15,11 @@ jobs:
     name: Terraform Apply
     runs-on: ubuntu-latest
     outputs:
-      backend_url:      ${{ steps.tf-output.outputs.backend_url }}
-      frontend_bucket:  ${{ steps.tf-output.outputs.frontend_bucket }}
+      frontend_bucket: ${{ steps.tf-output.outputs.frontend_bucket }}
+      ecr_url:         ${{ steps.tf-output.outputs.ecr_url }}
+      db_url:          ${{ steps.tf-output.outputs.db_url }}
+      s3_bucket:       ${{ steps.tf-output.outputs.s3_bucket }}
+      apprunner_role:  ${{ steps.tf-output.outputs.apprunner_role }}
 
     steps:
       - name: Checkout code
@@ -49,8 +52,10 @@ jobs:
         id: tf-output
         working-directory: terraform
         run: |
-          echo "backend_url=$(terraform output -raw backend_url)" >> $GITHUB_OUTPUT
           echo "frontend_bucket=$(terraform output -raw frontend_bucket)" >> $GITHUB_OUTPUT
+          echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+          echo "s3_bucket=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
+          echo "apprunner_role=$(terraform output -raw apprunner_role_arn)" >> $GITHUB_OUTPUT
 
   deploy-backend:
     name: Deploy Backend
@@ -75,12 +80,65 @@ jobs:
       - name: Build and push Docker image
         working-directory: backend
         env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPO:     vaultdrop-backend
-          IMAGE_TAG:    latest
+          ECR_URL: ${{ needs.deploy-infrastructure.outputs.ecr_url }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPO:$IMAGE_TAG
+          docker build -t $ECR_URL:latest .
+          docker push $ECR_URL:latest
+
+      - name: Deploy or update App Runner
+        env:
+          ECR_URL:        ${{ needs.deploy-infrastructure.outputs.ecr_url }}
+          APPRUNNER_ROLE: ${{ needs.deploy-infrastructure.outputs.apprunner_role }}
+          DB_PASSWORD:    ${{ secrets.DB_PASSWORD }}
+          S3_BUCKET:      ${{ needs.deploy-infrastructure.outputs.s3_bucket }}
+        run: |
+          # Check if service already exists
+          SERVICE_ARN=$(aws apprunner list-services --region ${{ secrets.AWS_REGION }} \
+            --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].ServiceArn" \
+            --output text)
+
+          if [ -z "$SERVICE_ARN" ]; then
+            echo "Creating App Runner service..."
+            aws apprunner create-service \
+              --service-name vaultdrop-backend \
+              --region ${{ secrets.AWS_REGION }} \
+              --source-configuration "{
+                \"AuthenticationConfiguration\": {\"AccessRoleArn\": \"$APPRUNNER_ROLE\"},
+                \"ImageRepository\": {
+                  \"ImageIdentifier\": \"$ECR_URL:latest\",
+                  \"ImageRepositoryType\": \"ECR\",
+                  \"ImageConfiguration\": {
+                    \"Port\": \"3000\",
+                    \"RuntimeEnvironmentVariables\": {
+                      \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
+                      \"S3_BUCKET\": \"$S3_BUCKET\",
+                      \"PORT\": \"3000\"
+                    }
+                  }
+                },
+                \"AutoDeploymentsEnabled\": true
+              }"
+          else
+            echo "Updating App Runner service..."
+            aws apprunner update-service \
+              --service-arn $SERVICE_ARN \
+              --region ${{ secrets.AWS_REGION }} \
+              --source-configuration "{
+                \"AuthenticationConfiguration\": {\"AccessRoleArn\": \"$APPRUNNER_ROLE\"},
+                \"ImageRepository\": {
+                  \"ImageIdentifier\": \"$ECR_URL:latest\",
+                  \"ImageRepositoryType\": \"ECR\",
+                  \"ImageConfiguration\": {
+                    \"Port\": \"3000\",
+                    \"RuntimeEnvironmentVariables\": {
+                      \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
+                      \"S3_BUCKET\": \"$S3_BUCKET\",
+                      \"PORT\": \"3000\"
+                    }
+                  }
+                }
+              }"
+          fi
 
   deploy-frontend:
     name: Deploy Frontend
@@ -102,7 +160,7 @@ jobs:
           npm install
           npm run build
         env:
-          REACT_APP_API_URL: ${{ needs.deploy-infrastructure.outputs.backend_url }}
+          REACT_APP_API_URL: ${{ secrets.BACKEND_URL }}
 
       - name: Deploy to S3
         working-directory: frontend

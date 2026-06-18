@@ -13,3 +13,7 @@ output "lambda_arn" {
   description = "Cleanup Lambda function ARN"
   value       = aws_lambda_function.cleanup.arn
 }
+
+output "apprunner_role_arn" {
+  value = aws_iam_role.apprunner_ecr.arn
+}
