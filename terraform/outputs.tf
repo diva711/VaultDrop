@@ -17,3 +17,15 @@ output "lambda_arn" {
 output "apprunner_role_arn" {
   value = aws_iam_role.apprunner_ecr.arn
 }
+
+output "ecr_repository_url" {
+  value = aws_ecr_repository.backend.repository_url
+}
+
+output "frontend_bucket" {
+  value = aws_s3_bucket.frontend.bucket
+}
+
+output "frontend_url" {
+  value = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+}
