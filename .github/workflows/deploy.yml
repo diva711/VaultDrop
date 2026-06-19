@@ -84,15 +84,15 @@ jobs:
       - name: Build and push Docker image
         working-directory: backend
         env:
-          ECR_URL: ${{ needs.deploy-infrastructure.outputs.ecr_url }}
+          ECR_URL: ${{ needs.deploy-infrastructure.outputs.ecr_repository_url }}
         run: |
           docker build -t $ECR_URL:latest .
           docker push $ECR_URL:latest
 
       - name: Deploy or update App Runner
         env:
-          ECR_URL:        ${{ needs.deploy-infrastructure.outputs.ecr_url }}
-          APPRUNNER_ROLE: ${{ needs.deploy-infrastructure.outputs.apprunner_role }}
+          ECR_URL: ${{ needs.deploy-infrastructure.outputs.ecr_repository_url }}
+          APPRUNNER_ROLE: ${{ needs.deploy-infrastructure.outputs.apprunner_role_arn }}
           DB_PASSWORD:    ${{ secrets.DB_PASSWORD }}
           S3_BUCKET:      ${{ needs.deploy-infrastructure.outputs.s3_bucket }}
         run: |
