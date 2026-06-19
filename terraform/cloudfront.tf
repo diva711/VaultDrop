@@ -75,12 +75,3 @@ resource "aws_cloudfront_distribution" "frontend" {
     cloudfront_default_certificate = true
   }
 }
-
-output "frontend_url" {
-  value       = "https://${aws_cloudfront_distribution.frontend.domain_name}"
-  description = "Public URL for the VaultDrop frontend"
-}
-
-output "frontend_bucket" {
-  value = aws_s3_bucket.frontend.bucket
-}
