@@ -52,10 +52,12 @@ jobs:
         id: tf-output
         working-directory: terraform
         run: |
+          terraform output -raw ecr_repository_url
+          terraform output -raw frontend_bucket
+          terraform output -raw apprunner_role_arn
+          echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
           echo "frontend_bucket=$(terraform output -raw frontend_bucket)" >> $GITHUB_OUTPUT
-          echo "ecr_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
-          echo "s3_bucket=$(terraform output -raw s3_bucket_name)" >> $GITHUB_OUTPUT
-          echo "apprunner_role=$(terraform output -raw apprunner_role_arn)" >> $GITHUB_OUTPUT
+          echo "apprunner_role_arn=$(terraform output -raw apprunner_role_arn)" >> $GITHUB_OUTPUT
 
   deploy-backend:
     name: Deploy Backend
