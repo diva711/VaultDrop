@@ -1,6 +1,5 @@
-// index.js — the entry point, starts the Express server
-
-require('dotenv').config(); // loads .env file into process.env
+// env vars injected by App Runner in production, dotenv for local dev only
+if (process.env.NODE_ENV !== 'production') require('dotenv').config();
 
 const express = require('express');
 const cors    = require('cors');
