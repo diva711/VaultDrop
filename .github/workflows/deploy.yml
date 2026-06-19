@@ -15,11 +15,9 @@ jobs:
     name: Terraform Apply
     runs-on: ubuntu-latest
     outputs:
-      frontend_bucket: ${{ steps.tf-output.outputs.frontend_bucket }}
-      ecr_url:         ${{ steps.tf-output.outputs.ecr_url }}
-      db_url:          ${{ steps.tf-output.outputs.db_url }}
-      s3_bucket:       ${{ steps.tf-output.outputs.s3_bucket }}
-      apprunner_role:  ${{ steps.tf-output.outputs.apprunner_role }}
+      frontend_bucket:    ${{ steps.bucket.outputs.frontend_bucket }}
+      ecr_repository_url: ${{ steps.ecr.outputs.ecr_repository_url }}
+      apprunner_role_arn: ${{ steps.role.outputs.apprunner_role_arn }}
 
     steps:
       - name: Checkout code
@@ -48,16 +46,20 @@ jobs:
           TF_VAR_aws_region:  ${{ secrets.AWS_REGION }}
           TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
 
-      - name: Get Terraform outputs
-        id: tf-output
+      - name: Get ECR URL
+        id: ecr
         working-directory: terraform
-        run: |
-          terraform output -raw ecr_repository_url
-          terraform output -raw frontend_bucket
-          terraform output -raw apprunner_role_arn
-          echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
-          echo "frontend_bucket=$(terraform output -raw frontend_bucket)" >> $GITHUB_OUTPUT
-          echo "apprunner_role_arn=$(terraform output -raw apprunner_role_arn)" >> $GITHUB_OUTPUT
+        run: echo "ecr_repository_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
+
+      - name: Get frontend bucket
+        id: bucket
+        working-directory: terraform
+        run: echo "frontend_bucket=$(terraform output -raw frontend_bucket)" >> $GITHUB_OUTPUT
+
+      - name: Get AppRunner role
+        id: role
+        working-directory: terraform
+        run: echo "apprunner_role_arn=$(terraform output -raw apprunner_role_arn)" >> $GITHUB_OUTPUT
 
   deploy-backend:
     name: Deploy Backend
@@ -168,3 +170,5 @@ jobs:
         working-directory: frontend
         run: |
           aws s3 sync build/ s3://${{ needs.deploy-infrastructure.outputs.frontend_bucket }} --delete
+
+      
