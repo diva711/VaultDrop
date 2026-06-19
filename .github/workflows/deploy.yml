@@ -84,7 +84,7 @@ jobs:
       - name: Build and push Docker image
         working-directory: backend
         env:
-          ECR_URL: ${{ needs.deploy-infrastructure.outputs.ecr_repository_url }}
+          ECR_URL: 304358820330.dkr.ecr.ap-south-1.amazonaws.com/vaultdrop-backend
         run: |
           docker build -t $ECR_URL:latest .
           docker push $ECR_URL:latest
@@ -92,7 +92,7 @@ jobs:
       - name: Deploy or update App Runner
         env:
           ECR_URL: ${{ needs.deploy-infrastructure.outputs.ecr_repository_url }}
-          APPRUNNER_ROLE: ${{ needs.deploy-infrastructure.outputs.apprunner_role_arn }}
+          APPRUNNER_ROLE: arn:aws:iam::304358820330:role/vaultdrop-apprunner-ecr-role
           DB_PASSWORD:    ${{ secrets.DB_PASSWORD }}
           S3_BUCKET:      ${{ needs.deploy-infrastructure.outputs.s3_bucket }}
         run: |
@@ -169,6 +169,6 @@ jobs:
       - name: Deploy to S3
         working-directory: frontend
         run: |
-          aws s3 sync build/ s3://${{ needs.deploy-infrastructure.outputs.frontend_bucket }} --delete
+          aws s3 sync build/ s3://vaultdrop-frontend-ap-south-1 --delete
 
       
