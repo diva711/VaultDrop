@@ -90,58 +90,26 @@ jobs:
           docker push $ECR_URL:latest
 
       - name: Deploy or update App Runner
-        env:
-          ECR_URL: ${{ needs.deploy-infrastructure.outputs.ecr_repository_url }}
-          APPRUNNER_ROLE: arn:aws:iam::304358820330:role/vaultdrop-apprunner-ecr-role
-          DB_PASSWORD:    ${{ secrets.DB_PASSWORD }}
-          S3_BUCKET:      ${{ needs.deploy-infrastructure.outputs.s3_bucket }}
         run: |
-          # Check if service already exists
-          SERVICE_ARN=$(aws apprunner list-services --region ${{ secrets.AWS_REGION }} \
+          IMAGE="304358820330.dkr.ecr.ap-south-1.amazonaws.com/vaultdrop-backend:latest"
+          ROLE="arn:aws:iam::304358820330:role/vaultdrop-apprunner-ecr-role"
+          DB="${{ secrets.DATABASE_URL }}"
+          BUCKET="vaultdrop-files-ap-south-1"
+
+          SERVICE_ARN=$(aws apprunner list-services --region ap-south-1 \
             --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].ServiceArn" \
             --output text)
 
           if [ -z "$SERVICE_ARN" ]; then
-            echo "Creating App Runner service..."
             aws apprunner create-service \
               --service-name vaultdrop-backend \
-              --region ${{ secrets.AWS_REGION }} \
-              --source-configuration "{
-                \"AuthenticationConfiguration\": {\"AccessRoleArn\": \"$APPRUNNER_ROLE\"},
-                \"ImageRepository\": {
-                  \"ImageIdentifier\": \"$ECR_URL:latest\",
-                  \"ImageRepositoryType\": \"ECR\",
-                  \"ImageConfiguration\": {
-                    \"Port\": \"3000\",
-                    \"RuntimeEnvironmentVariables\": {
-                      \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
-                      \"S3_BUCKET\": \"$S3_BUCKET\",
-                      \"PORT\": \"3000\"
-                    }
-                  }
-                },
-                \"AutoDeploymentsEnabled\": true
-              }"
+              --region ap-south-1 \
+              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\"}}},\"AutoDeploymentsEnabled\":true}"
           else
-            echo "Updating App Runner service..."
             aws apprunner update-service \
               --service-arn $SERVICE_ARN \
-              --region ${{ secrets.AWS_REGION }} \
-              --source-configuration "{
-                \"AuthenticationConfiguration\": {\"AccessRoleArn\": \"$APPRUNNER_ROLE\"},
-                \"ImageRepository\": {
-                  \"ImageIdentifier\": \"$ECR_URL:latest\",
-                  \"ImageRepositoryType\": \"ECR\",
-                  \"ImageConfiguration\": {
-                    \"Port\": \"3000\",
-                    \"RuntimeEnvironmentVariables\": {
-                      \"DATABASE_URL\": \"${{ secrets.DATABASE_URL }}\",
-                      \"S3_BUCKET\": \"$S3_BUCKET\",
-                      \"PORT\": \"3000\"
-                    }
-                  }
-                }
-              }"
+              --region ap-south-1 \
+              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\"}}},\"AutoDeploymentsEnabled\":true}"
           fi
 
   deploy-frontend:
