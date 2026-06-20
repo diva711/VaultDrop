@@ -96,6 +96,19 @@ jobs:
           DB="${{ secrets.DATABASE_URL }}"
           BUCKET="vaultdrop-files-ap-south-1"
 
+          # Wait for App Runner to be ready
+          echo "Waiting for App Runner to be ready..."
+          for i in {1..30}; do
+            STATUS=$(aws apprunner list-services --region ap-south-1 \
+              --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].Status" \
+              --output text)
+            echo "Current status: $STATUS"
+            if [ "$STATUS" = "RUNNING" ] || [ -z "$STATUS" ]; then
+              break
+            fi
+            sleep 20
+          done
+
           SERVICE_ARN=$(aws apprunner list-services --region ap-south-1 \
             --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].ServiceArn" \
             --output text)
