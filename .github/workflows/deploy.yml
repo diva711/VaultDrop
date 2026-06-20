@@ -96,18 +96,9 @@ jobs:
           DB="${{ secrets.DATABASE_URL }}"
           BUCKET="vaultdrop-files-ap-south-1"
 
-          # Wait for App Runner to be ready
           echo "Waiting for App Runner to be ready..."
           for i in {1..30}; do
-            STATUS=$(aws apprunner list-services --region ap-south-1 \
-              --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].Status" \
-              --output text)
-            echo "Current status: $STATUS"
-            echo "Waiting for App Runner to be ready..."
-          for i in {1..30}; do
-            STATUS=$(aws apprunner list-services --region ap-south-1 \
-              --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].Status" \
-              --output text)
+            STATUS=$(aws apprunner list-services --region ap-south-1 --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].Status" --output text)
             echo "Current status: $STATUS"
             if [ "$STATUS" = "RUNNING" ] || [ -z "$STATUS" ]; then
               echo "Ready! Waiting 30 more seconds to stabilize..."
@@ -116,25 +107,13 @@ jobs:
             fi
             sleep 20
           done
-              break
-            fi
-            sleep 20
-          done
 
-          SERVICE_ARN=$(aws apprunner list-services --region ap-south-1 \
-            --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].ServiceArn" \
-            --output text)
+          SERVICE_ARN=$(aws apprunner list-services --region ap-south-1 --query "ServiceSummaryList[?ServiceName=='vaultdrop-backend'].ServiceArn" --output text)
 
           if [ -z "$SERVICE_ARN" ]; then
-            aws apprunner create-service \
-              --service-name vaultdrop-backend \
-              --region ap-south-1 \
-              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\",\"NODE_ENV\":\"production\",\"AWS_REGION\":\"ap-south-1\"}}},\"AutoDeploymentsEnabled\":true}"
+            aws apprunner create-service --service-name vaultdrop-backend --region ap-south-1 --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\",\"NODE_ENV\":\"production\",\"AWS_REGION\":\"ap-south-1\"}}}}"
           else
-            aws apprunner update-service \
-              --service-arn $SERVICE_ARN \
-              --region ap-south-1 \
-              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\",\"NODE_ENV\":\"production\",\"AWS_REGION\":\"ap-south-1\"}}},\"AutoDeploymentsEnabled\":true}"
+            aws apprunner update-service --service-arn $SERVICE_ARN --region ap-south-1 --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\",\"NODE_ENV\":\"production\",\"AWS_REGION\":\"ap-south-1\"}}}}"
           fi
 
   deploy-frontend:
