@@ -104,12 +104,12 @@ jobs:
             aws apprunner create-service \
               --service-name vaultdrop-backend \
               --region ap-south-1 \
-              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\"}}},\"AutoDeploymentsEnabled\":true}"
+              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\",\"NODE_ENV\":\"production\"}}},\"AutoDeploymentsEnabled\":true}"
           else
             aws apprunner update-service \
               --service-arn $SERVICE_ARN \
               --region ap-south-1 \
-              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\"}}},\"AutoDeploymentsEnabled\":true}"
+              --source-configuration "{\"AuthenticationConfiguration\":{\"AccessRoleArn\":\"$ROLE\"},\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE\",\"ImageRepositoryType\":\"ECR\",\"ImageConfiguration\":{\"Port\":\"3000\",\"RuntimeEnvironmentVariables\":{\"DATABASE_URL\":\"$DB\",\"S3_BUCKET\":\"$BUCKET\",\"PORT\":\"3000\",\"NODE_ENV\":\"production\"}}},\"AutoDeploymentsEnabled\":true}"
           fi
 
   deploy-frontend:
